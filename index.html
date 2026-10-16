@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking Board</title>
+  <meta name="description" content="Minimal visual ranking and ordering workspace">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- CDN Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Utility Bar -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <div class="title-container">
+        <span id="workspaceTitle" class="workspace-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Workspace Title">Untitled List</span>
+      </div>
+    </div>
+    
+    <div class="top-bar-right">
+      <!-- View Switcher -->
+      <div class="segmented-control" role="group" aria-label="View Switcher">
+        <button type="button" class="segment-btn active" data-view="list">List</button>
+        <button type="button" class="segment-btn" data-view="grid-4">4 Col</button>
+        <button type="button" class="segment-btn" data-view="grid-8">8 Col</button>
+      </div>
+      
+      <!-- Actions -->
+      <button type="button" id="addItemsBtn" class="action-btn primary-btn">Add Items</button>
+      <button type="button" id="exportBtn" class="action-btn">Export</button>
+      <button type="button" id="clearBtn" class="action-btn subtle-btn">Clear</button>
+      <button type="button" id="themeToggleBtn" class="icon-btn" aria-label="Toggle Theme">
+        <svg class="theme-icon sun" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="theme-icon moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hidden File Input -->
+  <input type="file" id="fileInput" multiple accept="image/*,.webp,.png,.jpg,.jpeg,.gif,.svg,.avif" style="display: none;">
+
+  <!-- Main Workspace -->
+  <main class="main-workspace">
+    <!-- Empty State -->
+    <div id="emptyDropzone" class="empty-dropzone">
+      <span>Drop images or click to upload</span>
+    </div>
+
+    <!-- Ranked Items Container -->
+    <div id="itemsContainer" class="items-container view-list" style="display: none;">
+      <!-- Populated via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Global Window Drag Overlay -->
+  <div id="windowDragOverlay" class="window-drag-overlay" aria-hidden="true">
+    <div class="drag-overlay-box">
+      <span>Drop images to add</span>
+    </div>
+  </div>
+
+  <!-- Review & Name Pop-up Modal (Horizontal Center-Stage Carousel) -->
+  <div id="carouselModal" class="modal-backdrop" aria-hidden="true">
+    <div class="carousel-modal-dialog">
+      <!-- Glow canvas backdrop -->
+      <div id="centerGlowBackdrop" class="center-glow-backdrop"></div>
+      
+      <!-- Top Close Bar -->
+      <div class="modal-header-minimal">
+        <span id="carouselCounter" class="carousel-counter">01 / 01</span>
+        <button type="button" id="closeCarouselBtn" class="close-x-btn" aria-label="Close">×</button>
+      </div>
+
+      <!-- Stage Container -->
+      <div class="carousel-stage-container">
+        <button type="button" id="prevSlideBtn" class="carousel-nav-btn prev-btn" aria-label="Previous">‹</button>
+        
+        <div id="carouselStrip" class="carousel-strip">
+          <!-- Slides injected via JS -->
+        </div>
+
+        <button type="button" id="nextSlideBtn" class="carousel-nav-btn next-btn" aria-label="Next">›</button>
+      </div>
+
+      <!-- Direct Center Name Input -->
+      <div class="carousel-input-wrapper">
+        <input type="text" id="carouselNameInput" class="carousel-name-input" placeholder="Item Name" spellcheck="false" autocomplete="off">
+      </div>
+
+      <!-- Modal Bottom Actions -->
+      <div class="modal-bottom-bar">
+        <button type="button" id="discardCarouselBtn" class="action-btn subtle-btn">Cancel</button>
+        <button type="button" id="saveCarouselBtn" class="action-btn primary-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="exportModal" class="modal-backdrop" aria-hidden="true">
+    <div class="export-modal-dialog">
+      <div class="modal-header-minimal">
+        <span class="modal-label">Export</span>
+        <button type="button" id="closeExportBtn" class="close-x-btn" aria-label="Close">×</button>
+      </div>
+
+      <div class="export-body">
+        <div class="segmented-control full-width" role="group" aria-label="Export Layout">
+          <button type="button" class="export-segment-btn active" data-export-layout="list">List</button>
+          <button type="button" class="export-segment-btn" data-export-layout="grid-4">4 Col</button>
+          <button type="button" class="export-segment-btn" data-export-layout="grid-8">8 Col</button>
+        </div>
+      </div>
+
+      <div class="modal-bottom-bar">
+        <button type="button" id="cancelExportBtn" class="action-btn subtle-btn">Cancel</button>
+        <button type="button" id="generatePdfBtn" class="action-btn primary-btn">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear Confirmation Modal -->
+  <div id="confirmClearModal" class="modal-backdrop" aria-hidden="true">
+    <div class="confirm-modal-dialog">
+      <div class="modal-header-minimal">
+        <span class="modal-label">Clear Board</span>
+        <button type="button" id="closeClearModalBtn" class="close-x-btn" aria-label="Close">×</button>
+      </div>
+      <div class="confirm-body">
+        <span class="confirm-message">Remove all items from this board?</span>
+      </div>
+      <div class="modal-bottom-bar">
+        <button type="button" id="cancelClearBtn" class="action-btn subtle-btn">Cancel</button>
+        <button type="button" id="confirmClearBtn" class="action-btn danger-btn">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
